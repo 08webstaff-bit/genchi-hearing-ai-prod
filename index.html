@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f3b57">
+<title>現地調査ヒアリングAI｜丸八テント商会</title>
+<style>
+  :root{
+    --brand:#0f3b57; --brand2:#1c6ea4; --accent:#e8792b;
+    --bg:#f4f6f8; --card:#ffffff; --ink:#1b2733; --sub:#5b6b7a;
+    --line:#e2e8ef; --ok:#1a8f52; --warn:#c9770a; --alert:#c33a3a;
+    --radius:14px; --shadow:0 2px 10px rgba(16,40,60,.07);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.6;
+    padding:0 0 40px; -webkit-text-size-adjust:100%;
+  }
+  header{
+    background:linear-gradient(135deg,var(--brand),var(--brand2));
+    color:#fff; padding:calc(env(safe-area-inset-top) + 16px) 18px 16px;
+    position:sticky; top:0; z-index:10; box-shadow:0 2px 8px rgba(0,0,0,.15);
+  }
+  header .co{font-size:12px; opacity:.85; letter-spacing:.04em}
+  header h1{font-size:19px; margin:2px 0 0; font-weight:700}
+  header .tag{font-size:12px; opacity:.9; margin-top:3px}
+  main{max-width:560px; margin:0 auto; padding:16px}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px; margin-bottom:14px; box-shadow:var(--shadow);
+  }
+  .card h2{font-size:15px; margin:0 0 12px; display:flex; align-items:center; gap:8px}
+  .card h2 .n{background:var(--brand); color:#fff; width:22px; height:22px; border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center; font-size:12px; flex:0 0 auto;}
+  label{display:block; font-size:13px; font-weight:600; color:var(--ink); margin:14px 0 6px}
+  .fld:first-child label{margin-top:0}
+  .hint{font-size:11px; color:var(--sub); font-weight:400; margin-left:6px}
+  input[type=number],select,textarea{
+    width:100%; font-size:16px; padding:11px 12px; border:1px solid var(--line);
+    border-radius:10px; background:#fbfcfd; color:var(--ink); font-family:inherit;}
+  input:focus,select:focus,textarea:focus{outline:none; border-color:var(--brand2); background:#fff}
+  .unit{position:relative}
+  .unit .u{position:absolute; right:12px; top:50%; transform:translateY(-50%); color:var(--sub); font-size:13px; pointer-events:none}
+  .chips{display:flex; flex-wrap:wrap; gap:8px}
+  .chip{flex:1 1 auto; text-align:center; padding:10px 8px; border:1px solid var(--line);
+    border-radius:10px; font-size:13px; background:#fbfcfd; cursor:pointer; user-select:none;
+    min-width:64px; transition:.12s;}
+  .chip.on{background:var(--brand); color:#fff; border-color:var(--brand); font-weight:600}
+  .toggle{display:flex; align-items:center; justify-content:space-between; padding:12px; border:1px solid var(--line); border-radius:10px; background:#fbfcfd; margin-top:6px}
+  .toggle span{font-size:14px; font-weight:600}
+  .sw{position:relative; width:50px; height:28px; flex:0 0 auto}
+  .sw input{opacity:0; width:100%; height:100%; margin:0}
+  .sw .track{position:absolute; inset:0; background:#c9d3dd; border-radius:20px; transition:.2s}
+  .sw .track:before{content:""; position:absolute; width:22px; height:22px; background:#fff; border-radius:50%; top:3px; left:3px; transition:.2s; box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .sw input:checked + .track{background:var(--ok)}
+  .sw input:checked + .track:before{transform:translateX(22px)}
+  .btn{width:100%; padding:16px; font-size:16px; font-weight:700; color:#fff;
+    background:linear-gradient(135deg,var(--accent),#d3661c); border:none; border-radius:12px;
+    cursor:pointer; box-shadow:0 4px 14px rgba(211,102,28,.3); margin-top:4px;}
+  .btn:active{transform:translateY(1px)}
+  .btn.sec{background:none; color:var(--brand2); box-shadow:none; border:1px solid var(--line); font-weight:600; margin-top:8px}
+
+  /* category grid */
+  .cats{display:grid; grid-template-columns:repeat(2,1fr); gap:10px}
+  .cat{background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px 12px; cursor:pointer; box-shadow:var(--shadow); transition:.12s; text-align:left}
+  .cat:active{transform:scale(.98)}
+  .cat .emo{font-size:26px}
+  .cat .nm{font-size:13.5px; font-weight:700; margin-top:6px; line-height:1.35}
+  .cat .ds{font-size:11px; color:var(--sub); margin-top:2px; line-height:1.4}
+  .secTitle{font-size:12px; color:var(--sub); font-weight:700; margin:6px 2px 2px; letter-spacing:.03em}
+
+  /* results */
+  .hide{display:none}
+  .summary{background:linear-gradient(135deg,#0f3b57,#1c6ea4); color:#fff; border:none}
+  .summary h2{color:#fff}
+  .summary .big{font-size:20px; font-weight:700; margin:2px 0}
+  .summary .meta{font-size:13px; opacity:.9}
+  .kv{display:flex; gap:10px; margin:10px 0; padding:12px; background:var(--card); border:1px solid var(--line); border-radius:10px}
+  .kv .ic{font-size:20px; flex:0 0 auto}
+  .kv .body{flex:1}
+  .kv .t{font-size:12px; color:var(--sub); font-weight:600}
+  .kv .v{font-size:15px; font-weight:700}
+  .kv .d{font-size:12px; color:var(--sub); margin-top:2px}
+  .pill{display:inline-block; font-size:12px; font-weight:700; padding:3px 9px; border-radius:20px; margin:3px 4px 0 0}
+  .pill.ok{background:#e6f4ec; color:var(--ok)}
+  .pill.warn{background:#fbf0dd; color:var(--warn)}
+  .pill.alert{background:#f9e4e4; color:var(--alert)}
+  ul.notes{margin:6px 0 0; padding-left:0; list-style:none}
+  ul.notes li{position:relative; padding:9px 10px 9px 34px; border-bottom:1px solid var(--line); font-size:13.5px}
+  ul.notes li:last-child{border-bottom:none}
+  ul.notes li .lv{position:absolute; left:10px; top:9px; font-size:15px}
+  .aibox{background:#f0f6fb; border:1px solid #d6e6f2; border-radius:10px; padding:14px; font-size:13.5px; white-space:pre-wrap}
+  .disc{font-size:11px; color:var(--sub); text-align:center; margin-top:8px; padding:0 8px}
+  .badge-ai{font-size:10px; background:var(--brand2); color:#fff; padding:2px 7px; border-radius:20px; font-weight:600}
+  .crumb{font-size:12px; color:var(--brand2); font-weight:600; margin-bottom:10px; cursor:pointer}
+  /* photo uploader */
+  .addphoto{display:flex; align-items:center; justify-content:center; gap:8px; width:100%;
+    padding:16px; border:2px dashed var(--brand2); border-radius:12px; background:#f0f6fb;
+    color:var(--brand2); font-size:14px; font-weight:700; cursor:pointer; text-align:center}
+  .addphoto:active{background:#e4eef6}
+  .thumbs{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px}
+  .thumb{position:relative; aspect-ratio:1/1; border-radius:10px; overflow:hidden; border:1px solid var(--line); background:#000}
+  .thumb img{width:100%; height:100%; object-fit:cover; display:block}
+  .thumb .del{position:absolute; top:4px; right:4px; width:24px; height:24px; border-radius:50%;
+    background:rgba(0,0,0,.6); color:#fff; border:none; font-size:15px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center}
+  .thumb .lbl{position:absolute; left:0; right:0; bottom:0; background:rgba(0,0,0,.5); color:#fff; font-size:10px; padding:2px 4px; text-align:center}
+  .photonote{font-size:11px; color:var(--sub); margin-top:8px; line-height:1.5}
+  .rthumbs{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:6px}
+  .rthumbs img{width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:8px; border:1px solid var(--line)}
+  footer{text-align:center; font-size:11px; color:var(--sub); padding:16px}
+</style>
+</head>
+<body>
+<header>
+  <div class="co">株式会社 丸八テント商会</div>
+  <h1>現地調査ヒアリングAI</h1>
+  <div class="tag" id="subtag">製品を選んで、現場で入力 → その場で提案</div>
+</header>
+
+<main>
+  <!-- ===== 画面A：カテゴリ選択 ===== -->
+  <div id="screen-cats">
+    <div id="catGrid"></div>
+  </div>
+
+  <!-- ===== 画面B：入力フォーム ===== -->
+  <div id="screen-form" class="hide">
+    <div class="crumb" onclick="toCats()">← 製品を選び直す</div>
+    <div class="card">
+      <h2 id="formTitle"></h2>
+      <div id="formFields"></div>
+    </div>
+    <div class="card">
+      <h2><span class="n">📷</span>現場写真（任意）</h2>
+      <label class="addphoto" for="photoInput">📷 写真を撮る / 選ぶ</label>
+      <input type="file" id="photoInput" accept="image/*" capture="environment" multiple style="display:none" onchange="addPhotos(this)">
+      <div class="thumbs" id="thumbs"></div>
+      <div class="photonote">全景・地面・取付先・搬入経路などを撮っておくと、提案の精度が上がります。<br>※ 試作版では写真は端末内で保持し提案書に添付されます。AIによる画像自動解析は本番版（Vision連携）で対応します。</div>
+    </div>
+    <button class="btn" onclick="analyze()">🤖 AIに提案してもらう</button>
+    <p class="disc">※ ヒアリング補助用の一次提案です。荷重・確認申請・寸法の最終確定は構造設計／現地実測で行ってください。</p>
+  </div>
+
+  <!-- ===== 画面C：結果 ===== -->
+  <div id="screen-result" class="hide">
+    <div class="crumb" onclick="backToForm()">← 入力に戻って修正</div>
+    <div class="card summary">
+      <h2>提案サマリー <span class="badge-ai">AI生成</span></h2>
+      <div class="meta" id="r-cat"></div>
+      <div class="big" id="r-type"></div>
+      <div class="meta" id="r-sub"></div>
+    </div>
+    <div class="card">
+      <h2>📐 推奨仕様</h2>
+      <div id="r-specs"></div>
+      <div class="kv"><div class="ic">🧵</div><div class="body"><div class="t">生地・素材候補</div><div class="v"><span id="r-fabric"></span></div></div></div>
+    </div>
+    <div class="card">
+      <h2>🛠️ 補強・取付・固定</h2>
+      <div id="r-reinforce"></div>
+    </div>
+    <div class="card">
+      <h2>⚠️ 注意点・確認事項</h2>
+      <ul class="notes" id="r-notes"></ul>
+    </div>
+    <div class="card" id="r-photocard">
+      <h2>📷 現場写真</h2>
+      <div class="rthumbs" id="r-thumbs"></div>
+    </div>
+    <div class="card" id="r-findcard" style="display:none">
+      <h2>🔎 写真からのAI所見 <span class="badge-ai">画像解析</span></h2>
+      <ul class="notes" id="r-findings"></ul>
+    </div>
+    <div class="card">
+      <h2>💬 担当者へのひとこと <span class="badge-ai">AI生成</span></h2>
+      <div class="aibox" id="r-ai"></div>
+    </div>
+    <button class="btn sec" onclick="backToForm()">← 入力に戻って修正</button>
+    <button class="btn sec" onclick="copyResult()">📋 提案内容をコピー</button>
+    <button class="btn sec" onclick="toCats()">🏠 別の製品を提案</button>
+    <p class="disc" id="r-disc"></p>
+  </div>
+</main>
+<footer>丸八テント商会 現地調査ヒアリングAI（本番版 v1.0 ・ Claude API連携）</footer>
+
+<script>
+/* ============================================================
+   共通フィールド部品（使い回し）
+============================================================ */
+const F = {
+  term:  {key:'term', type:'chips', label:'設置期間', opts:[['permanent','常設（長期）'],['temporary','仮設（一時）']], def:'permanent'},
+  ground:{key:'ground', type:'chips', label:'地面の種類', opts:[['asphalt','アスファルト'],['concrete','コンクリート'],['soil','土・地面'],['gravel','砕石・砂利'],['foundation','既存基礎']], def:'concrete'},
+  snow:  {key:'snow', type:'chips', label:'この地域の積雪', opts:[['none','ほぼ無し'],['light','〜30cm'],['mid','〜100cm'],['heavy','多雪(100cm〜)']], def:'none'},
+  windy: {key:'windy', type:'toggle', label:'🌊 沿岸・高所など強風地'},
+  memo:  {key:'memo', type:'text', label:'現場メモ（任意）', hint:'搬入経路・隣接物・電源など'},
+  num:(key,label,ph,hint,req)=>({key,type:'number',label,ph,hint,req:!!req}),
+};
+
+/* ============================================================
+   製品カタログ（＝入力項目 ＋ 提案ロジック）
+   製品を増やすときはここに1エントリ足すだけ。
+============================================================ */
+const CATALOG = [
+{ id:'warehouse', group:'倉庫・上屋', emo:'🏭', name:'テント倉庫', desc:'保管・作業場（常設）',
+  fields:[
+    F.num('width','間口（幅）','例）6','m',true), F.num('depth','奥行','例）10','m',true),
+    F.num('height','希望軒高','例）3.5','m'),
+    F.term, F.ground, F.snow, F.windy,
+    {key:'forklift', type:'toggle', label:'🚜 フォークリフト通行あり'},
+    {key:'light', type:'toggle', label:'☀️ 採光したい'},
+    {key:'dust', type:'toggle', label:'💨 粉じん・静電気に注意'},
+    F.memo ],
+  infer:i=>{ const W=i.width,D=i.depth,area=W*D,R=blank(); R.area=area;
+    if(W<=6){R.type='標準テント倉庫（切妻／片流れ）';R.desc='小〜中規模の常設倉庫の定番。';R.frame='角パイプ骨組み';}
+    else if(W<=12){R.type='中型テント倉庫（切妻）';R.desc='無柱スパンを確保した保管・作業空間。';R.frame='H形鋼／重量鉄骨';}
+    else if(W<=20){R.type='大型テント倉庫（トラス構造）';R.desc='広間口。トラス梁で大空間を確保。';R.frame='鉄骨トラス';R.risk.push('間口が広いため専用構造設計が前提');}
+    else {R.type='大空間膜構造建築';R.desc='超広間口。膜構造建築として個別設計。';R.frame='膜構造専用フレーム';R.risk.push('意匠・構造の個別設計');}
+    let pitch=3.0; if(i.snow==='mid'||i.windy)pitch=2.5; if(i.snow==='heavy')pitch=2.0; if(W>12)pitch=Math.min(pitch,2.5);
+    const bays=Math.max(1,Math.ceil(D/pitch)); let posts=(bays+1)*2; let pn='奥行'+D+'m ÷ 柱ピッチ約'+pitch.toFixed(1)+'m ＝ '+bays+'スパン×両側';
+    if(W>12){posts+=bays+1; pn+=' ＋中柱列';}
+    R.specs.push(['🔩','必要柱数（目安）','約'+posts+'本',pn]);
+    R.specs.push(['📏','床面積','約'+area.toFixed(0)+'㎡',i.height?('希望軒高 '+i.height+'m'):'']);
+    R.fabric=['防炎ターポリン（常設グレード）','遮熱・耐候ターポリン'];
+    if(i.light)R.fabric.push('透光（乳白）シート／採光窓');
+    if(i.dust)R.fabric.push('帯電防止・耐摩耗シート'); if(W>12)R.fabric.push('高耐久PVC膜材');
+    groundRule(i,R); windSnowRule(i,R);
+    if(i.forklift){R.reinforce.push(['warn','フォークリフト通行のため、柱ガード設置・出入口有効幅の確保・柱位置レイアウト調整が必要。']);R.risk.push('フォークリフトの動線と柱位置');}
+    permitRule(i,R,area>10);
+    R.notes.push(['warn','防炎：屋内・不特定多数が使う場合は防炎ラベル付きシートが必要。']);
+    if(i.height)R.notes.push(['ok','希望軒高'+i.height+'m：梁下有効高で確保できるか設計時に照合。']);
+    R.notes.push(['ok','搬入・設営：現場までの経路幅・重機／高所作業車の可否を確認。']); return R; } },
+
+{ id:'loading', group:'倉庫・上屋', emo:'📦', name:'荷捌き上屋・軒先', desc:'搬出入部・軒先を覆う上屋',
+  fields:[ F.num('width','間口（幅）','例）8','m',true), F.num('depth','出（奥行）','例）4','m',true),
+    F.num('height','必要軒高','例）4','m',true), F.ground, F.snow, F.windy,
+    {key:'attach', type:'chips', label:'取付方法', opts:[['wall','既存建物に接続'],['free','独立自立']], def:'wall'},
+    {key:'truck', type:'toggle', label:'🚛 大型トラックが入る'}, F.memo ],
+  infer:i=>{ const R=blank();
+    R.type='荷捌き上屋（片流れ）'; R.desc='建物軒先・搬出入部を雨から保護する上屋。'; R.frame=i.attach==='wall'?'既存躯体連結＋支柱':'独立支柱＋梁';
+    let pitch=(i.snow==='heavy')?2.5:3.0; const bays=Math.max(1,Math.ceil(i.depth/pitch));
+    R.specs.push(['🔩','支柱数（目安）','約'+(bays+1)+'本（正面列）',i.attach==='wall'?'背面は既存躯体で受け':'両側支柱が必要']);
+    R.specs.push(['📐','必要軒高',i.height+' m',i.truck?'大型トラック：4m以上を推奨・実車高で確認':'']);
+    R.fabric=['防炎ターポリン','遮熱ターポリン']; groundRule(i,R); windSnowRule(i,R);
+    if(i.attach==='wall')R.reinforce.push(['warn','既存建物への接続部：躯体の受け耐力・防水納まり（雨仕舞い）を要確認。']);
+    if(i.truck){R.notes.push(['alert','大型車の最大高さ・進入角度に対し軒高と有効幅が足りるか実測を。']);R.risk.push('大型車の進入寸法');}
+    permitRule(i,R,true); return R; } },
+
+{ id:'parking', group:'屋根・固定', emo:'🚗', name:'駐車場・駐輪場テント', desc:'車・自転車の屋根',
+  fields:[ {key:'kind', type:'chips', label:'対象', opts:[['car','自動車'],['cycle','自転車・バイク']], def:'car'},
+    F.num('width','間口（幅）','例）5','m',true), F.num('depth','奥行','例）10','m',true),
+    {key:'roof', type:'chips', label:'屋根形状', opts:[['single','片流れ'],['gable','両流れ・切妻']], def:'single'},
+    {key:'slope', type:'chips', label:'地面の傾斜', opts:[['none','平坦'],['gentle','緩やか(〜5%)'],['steep','急(5%〜)']], def:'none'},
+    F.ground, F.snow, F.windy, F.memo ],
+  infer:i=>{ const R=blank(); const stalls=Math.max(1,Math.floor(i.width/(i.kind==='car'?2.5:0.9)));
+    R.type=(i.kind==='car'?'カーポート型':'サイクルポート型')+'固定テント屋根'; R.desc='車両上部を覆う'+(i.roof==='single'?'片流れ':'切妻')+'屋根。'; R.frame='角パイプ柱＋梁';
+    const bays=Math.max(1,Math.ceil(i.depth/2.5));
+    R.specs.push(['🔩','支柱数（目安）','約'+((bays+1)*(i.roof==='gable'?2:1))+'本','奥行'+i.depth+'m ÷ 約2.5m']);
+    R.specs.push(['🅿️','収容目安','約'+stalls+(i.kind==='car'?'台':'台/列'),'間口から概算']);
+    R.fabric=['防炎ターポリン','遮熱・UVカットシート']; slopeRule(i,R); groundRule(i,R); windSnowRule(i,R);
+    R.reinforce.push(['warn','屋外・独立柱のため、耐風のアンカー／基礎と筋交いを確実に。']);
+    R.notes.push(['ok','伸縮式で畳めるタイプをご希望なら「アコーディオンガレージ」もご検討ください。']);
+    permitRule(i,R,i.width*i.depth>10); return R; } },
+
+{ id:'accordion', group:'屋根・固定', emo:'🅿️', name:'アコーディオンガレージ', desc:'伸縮式の車庫・駐車スペース',
+  fields:[ F.num('width','横幅（間口）','例）3','m',true), F.num('height','高さ','例）2.5','m',true), F.num('depth','奥行','例）5','m',true),
+    {key:'slope', type:'chips', label:'地面の傾斜', opts:[['none','平坦'],['gentle','緩やか(〜5%)'],['steep','急(5%〜)']], def:'none'},
+    F.ground,
+    {key:'rail', type:'chips', label:'走行方式', opts:[['floor','床レール'],['caster','キャスター']], def:'floor'},
+    {key:'drive', type:'chips', label:'操作', opts:[['manual','手動'],['motor','電動']], def:'manual'},
+    F.windy, F.memo ],
+  infer:i=>{ const R=blank(); const cars=Math.max(1,Math.floor(i.width/2.5));
+    R.type='アコーディオンガレージ（伸縮式車庫）'; R.desc='使わない時は蛇腹状に畳んで省スペース、車の出し入れ時に伸ばして使用。'; R.frame='ジャバラ骨組み＋'+(i.rail==='floor'?'床レール走行':'キャスター走行');
+    R.specs.push(['📐','横幅 × 高さ × 奥行',i.width+'m × '+i.height+'m × '+i.depth+'m','収納時は前後に圧縮']);
+    R.specs.push(['🚗','収容目安','約'+cars+'台','横幅から概算（車1台 約2.5m）']);
+    R.specs.push(['🎛️','操作',i.drive==='motor'?'電動':'手動',i.drive==='motor'?'電源工事が必要':'']);
+    R.fabric=['防炎ターポリン','耐候・耐屈曲シート','透明窓（採光・視認）'];
+    slopeRule(i,R); groundRule(i,R);
+    if(i.rail==='floor')R.reinforce.push(['warn','床レール：全長にわたる水平と、車両・人の横断への配慮、ゴミ噛み込み対策が必要。']);
+    else R.reinforce.push(['warn','キャスター：走行面の平滑さと、ストッパー（風・自走防止）を確保。']);
+    if(i.windy)R.reinforce.push(['alert','強風地：伸ばした状態で煽られやすい。アンカー・戸当たり固定を強化。']);
+    else R.reinforce.push(['warn','伸長状態での固定（アンカー／ストッパー）を確実に。']);
+    R.notes.push(['alert','開口有効高：車両の全高（ルーフキャリア等含む）が高さ'+i.height+'mに収まるか実車で確認。']);
+    R.notes.push(['ok','出し入れ動線：前面の引き出しスペースと、隣地・道路へのはみ出しを確認。']);
+    if(i.drive==='motor')R.notes.push(['warn','電源：屋外電源と、停電時の手動操作手段を確認。']);
+    return R; } },
+
+{ id:'passage', group:'屋根・固定', emo:'🚶', name:'通路・階段テント', desc:'建物間の動線・階段の屋根',
+  fields:[ F.num('width','通路幅','例）2','m',true), F.num('length','長さ','例）15','m',true),
+    {key:'shape', type:'chips', label:'屋根形状', opts:[['arch','アーチ'],['single','片流れ'],['gable','切妻']], def:'arch'},
+    {key:'stair', type:'toggle', label:'🪜 階段部を含む'}, F.ground, F.snow, F.windy, F.memo ],
+  infer:i=>{ const R=blank();
+    R.type=(i.stair?'階段':'通路')+'テント屋根（'+({arch:'アーチ',single:'片流れ',gable:'切妻'}[i.shape])+'）'; R.desc='動線を雨・日差しから保護。'; R.frame='軽量鋼管骨組み';
+    const bays=Math.max(1,Math.ceil(i.length/2.0));
+    R.specs.push(['🔩','支柱数（目安）','約'+((bays+1)*2)+'本','長さ'+i.length+'m ÷ 約2.0m×両側']);
+    R.specs.push(['📏','有効幅・長さ',i.width+'m × '+i.length+'m',i.stair?'階段の踏面に合わせ柱位置を調整':'']);
+    R.fabric=['防炎ターポリン','透光シート（明るさ確保）']; groundRule(i,R); windSnowRule(i,R);
+    if(i.stair)R.notes.push(['warn','階段部：段差に柱基礎を合わせる、雨の吹き込み・滑りに配慮。']);
+    permitRule(i,R,false); return R; } },
+
+{ id:'awning', group:'日よけ', emo:'🌤️', name:'オーニング', desc:'電動／手動の可動日よけ',
+  fields:[ {key:'mount', type:'chips', label:'取付先', opts:[['wall','外壁'],['window','窓上'],['facade','店舗ファサード']], def:'wall'},
+    F.num('width','間口','例）4','m',true), F.num('proj','出幅','例）2.5','m',true),
+    {key:'drive', type:'chips', label:'駆動', opts:[['manual','手動クランク'],['motor','電動'],['sensor','電動＋風/日照センサー']], def:'motor'},
+    {key:'wall', type:'chips', label:'取付下地', opts:[['rc','RC・コンクリ'],['alc','ALC'],['steel','鉄骨'],['wood','木造'],['unknown','不明']], def:'unknown'},
+    F.windy, F.memo ],
+  infer:i=>{ const R=blank(); const big=i.proj>3||i.width>5;
+    R.type=(big?'大型':'標準')+'オーニング（フォールディングアーム式）'; R.desc='壁付けで前方へ張り出す可動日よけ。'; R.frame='アルミアーム＋角度可変';
+    R.specs.push(['📐','間口 × 出幅',i.width+'m × '+i.proj+'m',i.proj>3?'出幅3m超はアーム/ブラケット強化':'']);
+    R.specs.push(['🎛️','駆動方式',{manual:'手動クランク',motor:'電動',sensor:'電動＋センサー自動格納'}[i.drive],i.drive!=='manual'?'電源工事が必要':'']);
+    R.fabric=['アクリル総布（耐候・色堅牢）','撥水加工キャンバス']; if(i.mount==='facade')R.fabric.push('デザイン／ロゴ印刷対応');
+    // 下地
+    const wl={rc:['ok','RC下地はアンカー固定に適。'],alc:['warn','ALCは専用アンカー＋補強プレートが必要（引抜き注意）。'],steel:['ok','鉄骨下地はビス／ボルト固定可。位置を要確認。'],wood:['warn','木造は下地（柱・間柱）位置に確実に固定。'],unknown:['alert','取付下地が不明：壁の構造（RC/ALC/鉄骨/木）を現地で必ず特定。']}[i.wall];
+    R.reinforce.push(wl); if(big)R.reinforce.push(['warn','出幅・間口が大きく風の影響大。取付ブラケット増設と下地補強を。']);
+    if(i.windy||i.drive!=='sensor')R.notes.push(['alert','強風時：畳み忘れによる破損が多い。'+(i.drive==='sensor'?'センサー自動格納で対策済':'風センサー付き電動を強く推奨')+'。']);
+    if(i.drive!=='manual')R.notes.push(['warn','電源：屋外コンセント／専用回路の有無を確認。']);
+    R.notes.push(['ok','出幅が大きいほど日よけ効果大だが、隣地／道路へのはみ出し（越境）に注意。']);
+    R.risk.push('取付下地の特定'); if(i.windy)R.risk.push('強風時の格納'); return R; } },
+
+{ id:'eave', group:'日よけ', emo:'🏪', name:'庇テント・店舗テント', desc:'固定式の日よけ・看板兼用',
+  fields:[ F.num('width','間口','例）3.6','m',true), F.num('proj','出幅','例）1.2','m',true),
+    {key:'shape', type:'chips', label:'形状', opts:[['flat','角型（フラット）'],['round','丸型（ドーム）'],['tri','三角']], def:'flat'},
+    {key:'wall', type:'chips', label:'取付下地', opts:[['rc','RC・コンクリ'],['alc','ALC'],['steel','鉄骨'],['unknown','不明']], def:'unknown'},
+    {key:'logo', type:'toggle', label:'🔤 ロゴ・店名を入れる'}, F.windy, F.memo ],
+  infer:i=>{ const R=blank();
+    R.type='店舗用固定テント（'+({flat:'角型',round:'ドーム型',tri:'三角型'}[i.shape])+'）'; R.desc='店先の日よけと看板を兼ねる固定庇。'; R.frame='鋼管フレーム＋壁固定';
+    R.specs.push(['📐','間口 × 出幅',i.width+'m × '+i.proj+'m','']);
+    R.specs.push(['🎨','仕上げ',i.logo?'ロゴ・店名プリント':'無地',i.logo?'全面プリント／切文字対応':'']);
+    R.fabric=['ターポリン（防炎）','耐候カラーシート']; if(i.logo)R.fabric.push('印刷対応ターポリン');
+    const wl={rc:['ok','RC下地はアンカー固定に適。'],alc:['warn','ALCは専用アンカー＋補強を。'],steel:['ok','鉄骨下地に固定可。'],unknown:['alert','取付下地が不明：壁構造を現地で特定。']}[i.wall];
+    R.reinforce.push(wl); windSnowRule(i,R,true);
+    R.notes.push(['warn','防炎：不特定多数が通る店先は防炎ラベル必須。']);
+    R.notes.push(['ok','道路上に出る場合は道路占用許可が必要なことがある。']);
+    R.risk.push('取付下地の特定'); return R; } },
+
+{ id:'openclose', group:'日よけ', emo:'🔄', name:'開閉式テント', desc:'屋根を開閉できるテント',
+  fields:[ F.num('width','間口','例）5','m',true), F.num('depth','奥行','例）6','m',true),
+    {key:'drive', type:'chips', label:'開閉方式', opts:[['manual','手動'],['motor','電動']], def:'motor'},
+    {key:'use', type:'chips', label:'用途', opts:[['terrace','テラス席'],['pool','プール'],['yard','中庭・作業場']], def:'terrace'},
+    F.ground, F.windy, F.memo ],
+  infer:i=>{ const R=blank();
+    R.type='開閉式テント（可動屋根）'; R.desc='晴天時は開放、雨天・日差し時は閉じて使える屋根。'; R.frame='開閉レール＋支柱';
+    R.specs.push(['📐','間口 × 奥行',i.width+'m × '+i.depth+'m','']);
+    R.specs.push(['🎛️','開閉',i.drive==='motor'?'電動':'手動',i.drive==='motor'?'電源工事が必要':'']);
+    R.fabric=['防炎ターポリン','透光シート']; if(i.use==='pool')R.fabric.push('耐塩素・防カビシート');
+    groundRule(i,R); windSnowRule(i,R,true);
+    R.reinforce.push(['warn','可動部：レール・駆動部のメンテ性と、開放状態での耐風固定を確認。']);
+    if(i.drive==='motor')R.notes.push(['warn','電源：専用回路と、停電時の手動開放手段を確認。']);
+    return R; } },
+
+{ id:'shade', group:'日よけ', emo:'⛱️', name:'シェード・タープ', desc:'膜/ネットの簡易日よけ',
+  fields:[ F.num('width','幅','例）4','m',true), F.num('depth','奥行','例）4','m',true),
+    {key:'type', type:'chips', label:'種類', opts:[['sail','シェードセイル'],['flat','角型シェード'],['net','遮光ネット']], def:'flat'},
+    {key:'anchor', type:'chips', label:'固定点', opts:[['wall','壁・柱'],['pole','専用ポール'],['mix','混在']], def:'mix'},
+    F.windy, F.memo ],
+  infer:i=>{ const R=blank();
+    R.type={sail:'シェードセイル',flat:'角型シェード',net:'遮光ネット'}[i.type]; R.desc='軽量な日よけ。設置が早く低コスト。'; R.frame=i.anchor==='pole'?'専用ポール＋ワイヤー':'壁・柱アンカー＋ワイヤー';
+    R.specs.push(['📐','面積目安',i.width+'m × '+i.depth+'m','張力を受ける四隅の固定が要点']);
+    R.fabric=i.type==='net'?['HDPE遮光ネット（遮光率選択）']:['耐候ポリエステル膜','遮熱・UVカット生地'];
+    R.reinforce.push(['warn','四隅に張力が集中：固定点の下地強度とターンバックルでの張り調整が必要。']);
+    if(i.anchor!=='wall')R.reinforce.push(['warn','専用ポールは根元の基礎（コンクリ埋込）が必要。']);
+    R.notes.push(['alert','強風対策：面が大きいほど煽られる。台風時は取り外せる設計が安全。']);
+    R.risk.push('固定点の強度'); return R; } },
+
+{ id:'parasol', group:'日よけ', emo:'🌂', name:'パラソル', desc:'テラス・屋外席の傘',
+  fields:[ {key:'type', type:'chips', label:'タイプ', opts:[['center','センターポール'],['hang','ハンギング'],['large','大型']], def:'center'},
+    F.num('size','サイズ（径/幅）','例）3','m',true), F.num('qty','必要本数','例）4','本',true),
+    {key:'base', type:'chips', label:'設置方法', opts:[['weight','ベース錘'],['embed','床埋込']], def:'weight'},
+    F.memo ],
+  infer:i=>{ const R=blank();
+    R.type={center:'センターポール パラソル',hang:'ハンギング（吊り下げ）パラソル',large:'大型パラソル'}[i.type]; R.desc='移動・撤去がしやすい屋外席向け日よけ。'; R.frame=i.base==='embed'?'床埋込ソケット':'可搬ベース錘';
+    R.specs.push(['🌂','サイズ / 数量','径'+i.size+'m × '+i.qty+'本','']);
+    R.specs.push(['⚓','固定',i.base==='embed'?'床埋込ソケット（安定・常設向き）':'ベース錘（可搬・要十分な重量）','']);
+    R.fabric=['アクリル/ポリエステル撥水生地','UVカット・防炎対応'];
+    if(i.base==='weight')R.reinforce.push(['warn','ベース錘は径に対し十分な重量を。風で倒れる事故に注意。']);
+    R.notes.push(['alert','強風・突風時はたたむ運用ルールを店舗と共有。']);
+    return R; } },
+
+{ id:'bellows', group:'伸縮・可動', emo:'🪗', name:'ジャバラ（伸縮式）テント', desc:'伸び縮みする通路/倉庫',
+  fields:[ F.num('width','間口','例）4','m',true), F.num('length','伸長時の長さ','例）8','m',true),
+    {key:'rail', type:'chips', label:'走行方式', opts:[['floor','床レール'],['hang','吊りレール'],['caster','キャスター']], def:'floor'},
+    {key:'use', type:'chips', label:'用途', opts:[['passage','伸縮通路'],['work','作業スペース開閉']], def:'passage'},
+    F.ground, F.windy, F.memo ],
+  infer:i=>{ const R=blank();
+    R.type='伸縮式テント（'+({passage:'通路型',garage:'ガレージ型',work:'作業開閉型'}[i.use])+'）'; R.desc='使わない時は畳んで省スペース、必要時に伸ばす。'; R.frame='ジャバラ骨組み＋'+({floor:'床レール',hang:'吊りレール',caster:'キャスター'}[i.rail]);
+    R.specs.push(['↔️','間口 × 伸長',i.width+'m × '+i.length+'m','収納時は蛇腹状に圧縮']);
+    R.fabric=['防炎ターポリン','耐屈曲・耐候シート'];
+    if(i.rail==='floor')R.reinforce.push(['warn','床レール：地面の水平と、フォークリフト等の横断可否を確認。']);
+    if(i.rail==='hang')R.reinforce.push(['warn','吊りレール：上部躯体の吊り耐力を確認。']);
+    R.reinforce.push(['warn','走行部の当たり・ストッパー・風対策の固定を設計。']);
+    groundRule(i,R); return R; } },
+
+{ id:'air', group:'膜構造', emo:'🎈', name:'エアーテント（空気膜）', desc:'骨組みなしの膜構造',
+  fields:[ {key:'use', type:'chips', label:'用途', opts:[['event','イベント'],['disaster','防災・救護'],['work','作業・養生']], def:'event'},
+    F.num('width','間口','例）6','m',true), F.num('depth','奥行','例）8','m',true),
+    {key:'membrane', type:'chips', label:'膜構成', opts:[['single','一重膜'],['double','二重膜（断熱）'],['tube','チューブ膜']], def:'single'},
+    {key:'power', type:'toggle', label:'🔌 常時送風（電源）確保可'}, F.windy, F.memo ],
+  infer:i=>{ const R=blank();
+    R.type='エアーテント（'+({single:'一重膜',double:'二重膜',tube:'チューブ膜'}[i.membrane])+'）'; R.desc='空気圧で自立。設営が非常に速く、骨組み不要。'; R.frame='空気膜構造（ブロワ加圧）';
+    R.specs.push(['📐','間口 × 奥行',i.width+'m × '+i.depth+'m','']);
+    R.specs.push(['💨','送風',i.membrane==='tube'?'チューブ加圧（送風停止後も自立）':'常時送風で内圧維持',i.power?'電源確保OK':'電源／発電機が必須']);
+    R.fabric=['気密ターポリン','高強度PVC膜']; if(i.membrane==='double')R.fabric.push('断熱二重膜');
+    R.reinforce.push(['warn','固定：ペグ・重錘・水タンクで四方をアンカー。内圧維持が前提。']);
+    if(!i.power&&i.membrane!=='tube')R.notes.push(['alert','常時送風タイプは停電＝倒壊。発電機/UPSかチューブ膜を検討。']);
+    R.notes.push(['warn','強風時は内圧・固定を増強、限界風速を超える場合は撤収運用を。']);
+    return R; } },
+
+{ id:'partition', group:'間仕切り', emo:'🚪', name:'間仕切り・ビニールカーテン', desc:'区画・防塵・シートシャッター',
+  fields:[ {key:'type', type:'chips', label:'種類', opts:[['curtain','ビニールカーテン'],['booth','間仕切りブース'],['shutter','シートシャッター']], def:'curtain'},
+    F.num('width','間口','例）4','m',true), F.num('height','高さ','例）3','m',true),
+    {key:'clear', type:'toggle', label:'🪟 透明（視認性）が必要'},
+    {key:'freq', type:'chips', label:'開閉頻度', opts:[['low','たまに'],['mid','1日数回'],['high','頻繁（車両出入り）']], def:'mid'},
+    {key:'clean', type:'toggle', label:'🧪 防塵・クリーン用途'}, F.memo ],
+  infer:i=>{ const R=blank();
+    R.type={curtain:'間仕切りビニールカーテン',booth:'間仕切りブース',shutter:'シートシャッター'}[i.type]; R.desc='空間を仕切り、粉じん・温度・視線を管理。'; R.frame=i.type==='shutter'?'電動巻取＋ガイドレール':'レール＋吊り／自立フレーム';
+    R.specs.push(['📐','間口 × 高さ',i.width+'m × '+i.height+'m','']);
+    R.specs.push(['🔁','開閉',{low:'低頻度',mid:'中頻度',high:'高頻度（高耐久仕様）'}[i.freq],i.freq==='high'?'車両出入りは自動＋耐久シート':'']);
+    R.fabric=[i.clear?'透明糸入りビニール（耐寒・防炎）':'不透明ターポリン（防炎）'];
+    if(i.clean)R.fabric.push('帯電防止・防カビシート');
+    if(i.type==='shutter'){R.reinforce.push(['warn','シートシャッター：開口上部の躯体に巻取部を固定、電源とガイドレール垂直を確保。']);}
+    else {R.reinforce.push(['ok','吊りレール／自立フレームで施工可。上部の吊り下地を確認。']);}
+    if(i.clean)R.notes.push(['warn','クリーン用途：隙間の目張り・気流方向・防炎規制を確認。']);
+    R.notes.push(['ok','防炎ラベルの要否（用途・面積）を確認。']); return R; } },
+
+{ id:'event', group:'仮設', emo:'⛺', name:'仮設・イベントテント', desc:'パイプ／ワンタッチ／ガゼボ',
+  fields:[ {key:'type', type:'chips', label:'種類', opts:[['onetouch','ワンタッチ'],['pipe','パイプテント'],['gazebo','ガゼボ']], def:'pipe'},
+    F.num('width','間口','例）5','m',true), F.num('depth','奥行','例）5','m',true),
+    {key:'days', type:'chips', label:'使用期間', opts:[['1','当日〜数日'],['weeks','数週間'],['months','数ヶ月']], def:'1'},
+    F.ground, F.windy, {key:'side', type:'toggle', label:'🧱 横幕（囲い）が必要'}, F.memo ],
+  infer:i=>{ const R=blank();
+    R.type={onetouch:'ワンタッチテント',pipe:'パイプテント（大型組立式）',gazebo:'ガゼボテント'}[i.type]; R.desc='設営が速い仮設。移設・撤去が容易。'; R.frame=i.type==='onetouch'?'折りたたみフレーム':'単管系パイプ骨組み';
+    R.specs.push(['📐','サイズ',i.width+'m × '+i.depth+'m','']);
+    R.specs.push(['📅','使用期間',{'1':'当日〜数日','weeks':'数週間','months':'数ヶ月'}[i.days],i.days==='months'?'長期は確認申請・耐候仕様を検討':'']);
+    R.fabric=['防炎ターポリン（標準）']; if(i.side)R.fabric.push('横幕（透明窓／無地）');
+    R.reinforce.push(i.ground==='asphalt'||i.ground==='concrete'?['alert','舗装面はペグが打てないため、重錘（ウェイト）での固定が必須。']:['warn','ペグ＋張り綱で四方を固定。抜けやすい地盤は重錘併用。']);
+    if(i.windy||i.side)R.notes.push(['alert','横幕を張ると風を受けやすい。強風時は横幕を外す・撤収する運用を。']);
+    if(i.days==='months')permitRule(i,R,true);
+    R.notes.push(['ok','設営・撤去のスケジュールと人員・搬入経路を確認。']); return R; } },
+
+{ id:'truck', group:'その他', emo:'🚛', name:'トラック幌・カバー', desc:'荷台幌・カバー・特注',
+  fields:[ F.num('width','荷台幅','例）2.2','m',true), F.num('length','荷台長','例）4','m',true),
+    F.num('height','あおり/骨高','例）2','m'),
+    {key:'type', type:'chips', label:'種類', opts:[['frame','骨組み幌'],['cover','荷台カバー'],['order','オーダーカバー']], def:'frame'},
+    F.memo ],
+  infer:i=>{ const R=blank();
+    R.type={frame:'トラック幌（骨組み式）',cover:'荷台カバー',order:'特注オーダーカバー'}[i.type]; R.desc='荷台の積荷を雨風・粉じんから保護。'; R.frame=i.type==='frame'?'幌骨（弓/縦骨）＋シート':'シートのみ（固定金具）';
+    R.specs.push(['📐','荷台寸法',i.width+'m × '+i.length+'m'+(i.height?' × H'+i.height+'m':''),'現車で実測が基本']);
+    R.fabric=['耐候ターポリン','帆布','防水PVC'];
+    R.reinforce.push(['warn','固定：フック・ラチェット・ゴムロープの位置と本数を荷台に合わせて設計。']);
+    R.notes.push(['alert','寸法は必ず現車で実測（メーカー・年式で差）。ロゴ入れも対応可。']);
+    R.notes.push(['ok','走行風・高速走行を想定した縫製強度・バタつき対策を。']); return R; } },
+
+{ id:'other', group:'その他', emo:'🧰', name:'網・ネット／看板／特注', desc:'その他・特注品',
+  fields:[ {key:'kind', type:'chips', label:'種類', opts:[['net','網・ネット'],['sign','看板・サイン'],['cover','特注カバー'],['custom','その他特注']], def:'net'},
+    F.num('width','幅','例）3','m',true), F.num('height','高さ／長さ','例）5','m',true),
+    F.windy, F.memo ],
+  infer:i=>{ const R=blank();
+    R.type={net:'網・ネット',sign:'看板・サインボード',cover:'特注カバー',custom:'特注品'}[i.kind]; R.desc='現地条件に合わせたオーダーメイド対応。'; R.frame='個別設計';
+    R.specs.push(['📐','寸法',i.width+'m × '+i.height+'m','']);
+    R.fabric=i.kind==='net'?['防炎ネット','防球/防塵ネット']:i.kind==='sign'?['ターポリン（印刷）','ターポリン幕']:['帯電防止/防炎素材','オーダー生地'];
+    R.reinforce.push(['warn','取付先の下地・固定方法を現地で確認し、個別に設計。']);
+    R.notes.push(['ok','用途・希望（寸法/色/文字/素材）を写真とあわせて共有ください。']);
+    if(i.kind==='net'&&i.windy)R.notes.push(['warn','面積の大きいネットは風荷重を受ける。目合い・支柱間隔を検討。']);
+    return R; } },
+];
+
+/* ============================================================
+   共通ルール（複数製品で使い回す判定）
+============================================================ */
+function blank(){ return {type:'',desc:'',frame:'',specs:[],fabric:[],reinforce:[],notes:[],risk:[],permit:null}; }
+function groundRule(i,R){ if(!i.ground)return;
+  const rule={
+    asphalt:['alert','アスファルトはアンカーが効きにくい。コンクリ基礎／ケミカルアンカー／重錘のいずれかが必須。'],
+    soil:['warn','土・地盤はアンカー引抜きに弱い。独立基礎（コンクリ根巻き）を推奨。'],
+    gravel:['warn','砕石は締固め不足だと不安定。独立基礎を推奨。'],
+    concrete:['ok','コンクリ床はアンカー固定に適（打設厚を要確認）。'],
+    foundation:['ok','既存基礎の耐力・アンカー位置を確認して活用。']}[i.ground];
+  if(rule)R.reinforce.push(rule);
+  if(i.ground==='asphalt')R.risk.push('アスファルトでのアンカーの効かせ方'); }
+function slopeRule(i,R){ if(!i.slope)return;
+  const r={none:['ok','地面はほぼ平坦。基礎レベル・排水に大きな支障は少ない。'],
+    gentle:['warn','緩やかな傾斜あり：柱脚／レールのレベル調整と、水勾配（排水方向）を確認。開口下部の隙間に注意。'],
+    steep:['alert','傾斜が大きい：整地・基礎でのレベル調整が必要。排水・柱脚長の差・戸の自走（滑り）を設計で吸収する。']}[i.slope];
+  if(r)R.reinforce.push(r);
+  if(i.slope!=='none')R.risk.push('地面の傾斜'); }
+function windSnowRule(i,R,light){
+  if(i.windy){R.reinforce.push(['alert','強風地：筋交い（ブレース）増設・アンカー本数増・ベースプレート補強が必要。']);R.risk.push('強風対策');}
+  else if(i.term==='permanent'&&!light){R.reinforce.push(['warn','常設は地域の基準風速に応じた耐風補強（筋交い）を見込む。']);}
+  if(i.snow==='heavy'){R.reinforce.push(['alert','多雪地域：積雪荷重が大きく、屋根勾配確保・母屋/梁の増強・構造計算が必須。']);R.risk.push('積雪荷重');R.notes.push(['alert','荷重：積雪・風は地域係数で変動。最終仕様は構造計算で確定。']);}
+  else if(i.snow==='mid'){R.reinforce.push(['warn','積雪荷重を見込み梁サイズと屋根勾配を検討。落雪先の安全も確認。']);R.risk.push('積雪荷重');R.notes.push(['alert','荷重：積雪・風は地域係数で変動。最終仕様は構造計算で確定。']);}
+  else if(i.snow==='light'){R.reinforce.push(['ok','積雪は軽微。標準勾配で対応可能な範囲。']);}
+}
+function permitRule(i,R,likely){
+  if(i.term==='permanent'&&likely){R.notes.push(['alert','建築確認申請：常設テント倉庫・上屋・屋根は原則対象。用途地域・防火地域・床面積を要確認。']);R.permit=true;}
+  else if(i.term==='temporary'){R.notes.push(['warn','仮設でも設置期間・規模により確認申請や仮設許可が必要な場合あり。']);}
+}
+
+/* ============================================================
+   画面・フォーム描画
+============================================================ */
+let CUR=null, LASTINP=null, lastPlain='', PHOTOS=[];
+
+/* ---- 写真添付（アップロード前に自動縮小：通信量とAPIコストを抑える） ---- */
+function addPhotos(input){
+  const files=[...input.files];
+  files.forEach(file=>{
+    if(!file.type.startsWith('image/'))return;
+    const url=URL.createObjectURL(file);
+    const img=new Image();
+    img.onload=()=>{
+      const max=1200; let w=img.naturalWidth, h=img.naturalHeight;
+      if(w>max||h>max){ const s=max/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); }
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      const data=cv.toDataURL('image/jpeg',0.7);
+      URL.revokeObjectURL(url);
+      PHOTOS.push({name:file.name,data}); renderThumbs();
+    };
+    img.onerror=()=>URL.revokeObjectURL(url);
+    img.src=url;
+  });
+  input.value='';   // 同じ写真を続けて選べるように
+}
+function removePhoto(idx){ PHOTOS.splice(idx,1); renderThumbs(); }
+function renderThumbs(){
+  document.getElementById('thumbs').innerHTML=PHOTOS.map((p,idx)=>
+    '<div class="thumb"><img src="'+p.data+'"><button class="del" onclick="removePhoto('+idx+')">×</button><div class="lbl">写真'+(idx+1)+'</div></div>').join('');
+}
+function renderCats(){
+  const groups={}; CATALOG.forEach(c=>{(groups[c.group]=groups[c.group]||[]).push(c);});
+  let html='';
+  for(const g in groups){
+    html+='<div class="secTitle">'+g+'</div><div class="cats">';
+    html+=groups[g].map(c=>'<div class="cat" onclick="openCat(\''+c.id+'\')"><div class="emo">'+c.emo+'</div><div class="nm">'+c.name+'</div><div class="ds">'+c.desc+'</div></div>').join('');
+    html+='</div>';
+  }
+  document.getElementById('catGrid').innerHTML=html;
+}
+function openCat(id){
+  CUR=CATALOG.find(c=>c.id===id);
+  PHOTOS=[]; renderThumbs();
+  document.getElementById('formTitle').innerHTML='<span class="n">✎</span>'+CUR.emo+' '+CUR.name;
+  document.getElementById('formFields').innerHTML=CUR.fields.map(renderField).join('');
+  CUR.fields.filter(f=>f.type==='chips').forEach(f=>{
+    document.querySelectorAll('#chips_'+f.key+' .chip').forEach(c=>c.onclick=()=>{
+      document.querySelectorAll('#chips_'+f.key+' .chip').forEach(x=>x.classList.remove('on')); c.classList.add('on'); });
+  });
+  show('form'); document.getElementById('subtag').textContent=CUR.name+'：現場で入力 → その場で提案';
+}
+function renderField(f){
+  const id='f_'+f.key, lab='<label>'+f.label+(f.hint?'<span class="hint">'+f.hint+'</span>':'')+'</label>';
+  if(f.type==='number') return '<div class="fld">'+lab+'<div class="unit"><input type="number" id="'+id+'" inputmode="decimal" step="0.1" min="0" placeholder="'+(f.ph||'')+'">'+(f.hint&&f.hint.length<=3?'<span class="u">'+f.hint+'</span>':'')+'</div></div>';
+  if(f.type==='text') return '<div class="fld">'+lab+'<textarea id="'+id+'" rows="2"></textarea></div>';
+  if(f.type==='toggle') return '<div class="fld"><div class="toggle"><span>'+f.label+'</span><label class="sw"><input type="checkbox" id="'+id+'"><span class="track"></span></label></div></div>';
+  if(f.type==='chips') return '<div class="fld">'+lab+'<div class="chips" id="chips_'+f.key+'">'+f.opts.map(o=>'<div class="chip'+(o[0]===f.def?' on':'')+'" data-v="'+o[0]+'">'+o[1]+'</div>').join('')+'</div></div>';
+  return '';
+}
+function collect(){
+  const inp={}, miss=[];
+  CUR.fields.forEach(f=>{
+    if(f.type==='number'){ const v=parseFloat(document.getElementById('f_'+f.key).value); inp[f.key]=isNaN(v)?null:v; if(f.req&&!(v>0))miss.push(f.label); }
+    else if(f.type==='text'){ inp[f.key]=document.getElementById('f_'+f.key).value.trim(); }
+    else if(f.type==='toggle'){ inp[f.key]=document.getElementById('f_'+f.key).checked; }
+    else if(f.type==='chips'){ const el=document.querySelector('#chips_'+f.key+' .chip.on'); inp[f.key]=el?el.dataset.v:f.def; }
+  });
+  return {inp,miss};
+}
+
+/* ============================================================
+   実行・結果描画
+============================================================ */
+function analyze(){
+  const {inp,miss}=collect();
+  if(miss.length){ alert('入力してください：\n・'+miss.join('\n・')); return; }
+  LASTINP=inp; const R=CUR.infer(inp);
+  R.notes.push(PHOTOS.length
+    ? ['ok','現場写真'+PHOTOS.length+'枚を添付済み。AIが写真から地面・取付先などを解析します（下記「写真からのAI所見」）。']
+    : ['ok','現地写真（全景・地面・取付先・搬入経路）を添付すると提案精度が上がります（入力画面の「現場写真」から）。']);
+  document.getElementById('r-cat').textContent=CUR.emo+' '+CUR.name;
+  document.getElementById('r-type').textContent=R.type;
+  document.getElementById('r-sub').textContent=(R.frame?'構造：'+R.frame:'')+(R.area?'　約'+R.area.toFixed(0)+'㎡':'');
+  document.getElementById('r-specs').innerHTML=R.specs.map(([ic,t,v,d])=>
+    '<div class="kv"><div class="ic">'+ic+'</div><div class="body"><div class="t">'+t+'</div><div class="v">'+v+'</div>'+(d?'<div class="d">'+d+'</div>':'')+'</div></div>').join('');
+  document.getElementById('r-fabric').innerHTML=[...new Set(R.fabric)].map(f=>'<span class="pill ok">'+f+'</span>').join('');
+  const lvName={ok:'OK',warn:'要注意',alert:'要対応'};
+  document.getElementById('r-reinforce').innerHTML=R.reinforce.map(([lv,t])=>
+    '<div style="margin-bottom:10px;font-size:13.5px"><span class="pill '+lv+'">'+lvName[lv]+'</span> '+t+'</div>').join('') || '<div class="d">特記事項なし</div>';
+  const icon={ok:'✅',warn:'⚠️',alert:'🔴'};
+  document.getElementById('r-notes').innerHTML=R.notes.map(([lv,t])=>'<li><span class="lv">'+icon[lv]+'</span>'+t+'</li>').join('');
+  document.getElementById('r-photocard').style.display=PHOTOS.length?'block':'none';
+  document.getElementById('r-thumbs').innerHTML=PHOTOS.map(p=>'<img src="'+p.data+'">').join('');
+  document.getElementById('r-disc').textContent='生成日時 '+new Date().toLocaleString('ja-JP')+' ／ 一次提案（要構造・申請確認）';
+  // まずローカルの提案文を表示（AI応答が来たら差し替え）
+  document.getElementById('r-ai').textContent=buildAIComment(inp,R);
+  document.getElementById('r-findcard').style.display='none';
+  document.getElementById('r-findings').innerHTML='';
+  lastPlain=buildPlain(inp,R,null);
+  show('result'); window.scrollTo({top:0,behavior:'smooth'});
+  enhanceWithAI(inp,R);   // サーバー経由でClaudeに問い合わせ（非同期）
+}
+
+/* ============================================================
+   Claude API 連携（サーバー /api/analyze 経由）
+   ── 失敗・オフライン時はローカルのテンプレ文にフォールバック
+============================================================ */
+function describeInputs(inp){
+  return CUR.fields
+    .filter(f=>inp[f.key]!==null&&inp[f.key]!==''&&inp[f.key]!==false)
+    .map(f=>{
+      let v=inp[f.key];
+      if(v===true) v='あり';
+      else if(f.type==='chips'){ const o=(f.opts||[]).find(o=>o[0]===v); if(o)v=o[1]; }
+      return f.label.replace(/<.*/,'')+'：'+v;
+    });
+}
+async function enhanceWithAI(inp,R){
+  const ai=document.getElementById('r-ai');
+  const orig=ai.textContent;
+  ai.textContent='AIが提案文と写真を解析中…';
+  const payload={
+    product:CUR.name, productId:CUR.id,
+    inputs:describeInputs(inp),
+    computed:{
+      type:R.type, frame:R.frame,
+      specs:R.specs.map(s=>s[1]+'：'+s[2]),
+      fabric:[...new Set(R.fabric)],
+      reinforce:R.reinforce.map(r=>r[1]),
+      notes:R.notes.map(n=>n[1]),
+      risks:[...new Set(R.risk)]
+    },
+    photos:PHOTOS.map(p=>p.data)
+  };
+  try{
+    const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!res.ok) throw new Error('api '+res.status);
+    const data=await res.json();
+    ai.textContent=(data && data.comment) ? data.comment : orig;
+    renderFindings(data && data.photoFindings);
+    lastPlain=buildPlain(inp,R,data);
+  }catch(e){
+    ai.textContent=orig;               // ローカル文にフォールバック
+    renderFindings(null);
+    lastPlain=buildPlain(inp,R,null);
+  }
+}
+function renderFindings(findings){
+  const card=document.getElementById('r-findcard'), ul=document.getElementById('r-findings');
+  if(!findings || !findings.length){ card.style.display='none'; ul.innerHTML=''; return; }
+  const icon={ok:'✅',warn:'⚠️',alert:'🔴'};
+  ul.innerHTML=findings.map(f=>{
+    const lv=(f && f.level) || 'ok', t=(f && f.text) || String(f);
+    return '<li><span class="lv">'+(icon[lv]||'✅')+'</span>'+t+'</li>';
+  }).join('');
+  card.style.display='block';
+}
+
+/* AIコメント（自然文）── ここを Claude API 応答に差し替えれば「AIに全部任せる」構成にできる */
+function buildAIComment(inp,R){
+  const L=[]; const dim=(inp.width&&(inp.depth||inp.proj||inp.length))?('約'+inp.width+'m×'+((inp.depth||inp.proj||inp.length))+'m'):'ご入力の条件';
+  L.push(dim+'の'+CUR.name+'ですね。まずは「'+R.type+'」を軸にご提案するのが妥当です。'+R.desc);
+  if(R.risk.length)L.push('特に注意したいのは '+[...new Set(R.risk)].join('・')+' です。ここは見積・設計前に詰めておきたいポイントです。');
+  if(PHOTOS.length)L.push('現場写真を'+PHOTOS.length+'枚いただいています。設計・見積の担当が現況を把握しやすくなります。');
+  if(R.permit)L.push('常設として建築確認申請が絡む可能性が高いので、用途地域・防火地域を早めに確認しておくと後工程がスムーズです。');
+  L.push('この内容で概算のイメージは掴めますが、寸法の実測・荷重・申請の最終判断は担当部署へ引き継いでください。');
+  return L.join('\n\n');
+}
+function buildPlain(inp,R,data){
+  const lvName={ok:'OK',warn:'要注意',alert:'要対応'};
+  const comment=(data && data.comment) ? data.comment : buildAIComment(inp,R);
+  const parts=['【現地調査ヒアリングAI 提案】','製品：'+CUR.name,
+    '入力：'+describeInputs(inp).join(' / '),
+    '推奨：'+R.type+(R.frame?'（'+R.frame+'）':''),
+    '主要スペック：\n'+R.specs.map(s=>' - '+s[1]+'：'+s[2]+(s[3]?'（'+s[3]+'）':'')).join('\n'),
+    '現場写真：'+(PHOTOS.length?PHOTOS.length+'枚 添付':'なし'),
+    '生地・素材候補：'+[...new Set(R.fabric)].join('、'),
+    '補強・取付：\n'+R.reinforce.map(([lv,t])=>' - ['+lvName[lv]+'] '+t).join('\n'),
+    '注意点：\n'+R.notes.map(([lv,t])=>' - '+t).join('\n')];
+  if(data && data.photoFindings && data.photoFindings.length){
+    parts.push('写真からのAI所見：\n'+data.photoFindings.map(f=>' - '+((f&&f.text)||f)).join('\n'));
+  }
+  parts.push('AIコメント：\n'+comment);
+  return parts.join('\n\n');
+}
+function copyResult(){ navigator.clipboard.writeText(lastPlain).then(
+  ()=>alert('提案内容をコピーしました。'),()=>{ prompt('コピーできない環境です。手動で選択してください：',lastPlain); }); }
+
+/* 画面遷移 */
+function show(s){ ['cats','form','result'].forEach(x=>document.getElementById('screen-'+x).classList.toggle('hide',x!==s)); }
+function toCats(){ show('cats'); document.getElementById('subtag').textContent='製品を選んで、現場で入力 → その場で提案'; window.scrollTo({top:0}); }
+function backToForm(){ show('form'); window.scrollTo({top:0}); }
+
+renderCats();
+</script>
+</body>
+</html>

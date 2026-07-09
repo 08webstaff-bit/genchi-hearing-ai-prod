@@ -1,0 +1,10 @@
+{
+  "name": "genchi-hearing-ai",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "現地調査ヒアリングAI（丸八テント商会）本番版",
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest"
+  }
+}
