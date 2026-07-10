@@ -69,7 +69,9 @@ export default async function handler(req, res) {
     return;
   }
   try {
-    const body = await readJson(req);
+    // Vercel は JSON ボディを自動解析して req.body に入れる（生ストリームは消費済み）。
+    // req.body が無い環境（ローカル簡易サーバー等）のみ自力で読む。
+    const body = (req.body && typeof req.body === 'object') ? req.body : await readJson(req);
 
     // 画像ブロックを組み立て（安全のため最大6枚）
     const content = [];
