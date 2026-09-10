@@ -83,7 +83,10 @@ export default async function handler(req, res) {
     content.push({ type: 'text', text: buildUserText(body) });
 
     const message = await client.messages.create({
-      model: 'claude-opus-4-8',
+      model: 'claude-sonnet-5',
+      // Sonnet 5 は指定しないと思考(thinking)が既定でONになる。従来(Opus 4.8)と同じ挙動に
+      // そろえ、思考分の出力トークンで max_tokens を圧迫しないよう明示的に切る。
+      thinking: { type: 'disabled' },
       max_tokens: 1500,
       system: SYSTEM,
       messages: [{ role: 'user', content }],
